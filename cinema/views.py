@@ -86,20 +86,12 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
     filterset_class = MovieSessionFilter
 
     def get_queryset(self):
-        queryset = self.queryset
+        queryset = self.queryset.select_related("movie", "cinema_hall")
         if self.action == "list":
-            queryset = (
-                queryset
-                .select_related("movie", "cinema_hall")
-                .annotate(
-                    taken_places=F(
-                        "cinema_hall__rows") * F(
-                        "cinema_hall__seats_in_row") - Count(
-                        "tickets")
-                )
+            queryset = queryset.annotate(
+                tickets_available=F("cinema_hall__rows") * F("cinema_hall__seats_in_row") - Count("tickets")
             )
-
-            return queryset
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
