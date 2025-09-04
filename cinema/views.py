@@ -20,30 +20,28 @@ from cinema.serializers import (
 )
 
 
-class OrderPagination(PageNumberPagination):
-    page_size = 5
-    page_size_query_param = "page_size"
-    max_page_size = 100
-
-
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+    pagination_class = None
 
 
 class ActorViewSet(viewsets.ModelViewSet):
     queryset = Actor.objects.all()
     serializer_class = ActorSerializer
+    pagination_class = None
 
 
 class CinemaHallViewSet(viewsets.ModelViewSet):
     queryset = CinemaHall.objects.all()
     serializer_class = CinemaHallSerializer
+    pagination_class = None
 
 
 class MovieViewSet(viewsets.ModelViewSet):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+    pagination_class = None
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -77,13 +75,14 @@ class MovieViewSet(viewsets.ModelViewSet):
             except ValueError:
                 qs = qs.none()
 
-        return qs.prefetch_related("genres", "actors")
+        return qs.prefetch_related("genres", "actors").distinct()
 
 
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = MovieSession.objects.all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = MovieSessionFilter
+    pagination_class = None
 
     def get_queryset(self):
         queryset = self.queryset.select_related("movie", "cinema_hall")
@@ -93,7 +92,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
                     "cinema_hall__rows") * F(
                     "cinema_hall__seats_in_row") - Count("tickets")
             )
-        return queryset
+        return queryset.distinct()
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -107,7 +106,7 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderListSerializer
-    pagination_class = OrderPagination
+    pagination_class = PageNumberPagination
 
     def get_serializer_class(self):
         if self.action == "list":
